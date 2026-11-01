@@ -1,0 +1,41 @@
+name: Build APK from ZIP
+
+on:
+  push:
+  workflow_dispatch: # This allows you to run it manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Unzip Source Code
+      # This unzips your specific file into a folder called 'source'
+      run: unzip "virtual-camera (3).zip" -d ./source
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Build with Gradle
+      run: |
+        cd ./source
+        # Sometimes the ZIP creates an extra folder inside. We handle that here:
+        if [ ! -f "gradlew" ]; then
+          cd */ || true
+        fi
+        # Make the gradle script executable and build
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        # This searches for the APK inside the source folder
+        path: ./source/**/build/outputs/apk/debug/*.apk
